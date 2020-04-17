@@ -6,10 +6,17 @@ import (
 	"log"
 	"net/http"
 
+	"google.golang.org/api/iterator"
+
+	"cloud.google.com/go/firestore"
+
 	firebase "firebase.google.com/go"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 )
+
+const FireStoreProjectID = "share-my-routine"
+const CollectionName = "userRoutines"
 
 // HTML
 var topTmpl = `
@@ -22,6 +29,17 @@ var topTmpl = `
 </head>
 <body>
 {{.Message}}
+<a href="/new">追加</a>
+<br>
+{{range $user := .Users}}
+  <p>{{$user.ID}}</p>
+  <p>{{$user.Routine.Title}}</p>
+  <p>{{$user.Routine.FirstRoutine}}</p>
+  <p>{{$user.Routine.SecondRoutine}}</p>
+  <p>{{$user.Routine.ThirdRoutine}}</p>
+  <p>{{$user.Routine.Message}}</p>
+  <p><a href="/page/{{$user.ID}}">{{$user.Routine.Title}}</a></p>
+{{end}}
 </body>
 </html>
 {{end}}
@@ -76,7 +94,12 @@ var pageTmpl = `
 </head>
 <body>
 {{.Message}}
-{{.ID}}
+<p>{{.User.ID}}</p>
+<p>{{.User.Routine.Title}}</p>
+<p>{{.User.Routine.FirstRoutine}}</p>
+<p>{{.User.Routine.SecondRoutine}}</p>
+<p>{{.User.Routine.ThirdRoutine}}</p>
+<p>{{.User.Routine.Message}}</p>
 </body>
 </html>
 {{end}}
@@ -92,20 +115,66 @@ type UserRoutine struct {
 	ImageURL      string `firestore:"image_url"`
 }
 
+type User struct {
+	ID      string       `json:"id"`
+	Routine *UserRoutine `json:"routine"`
+}
+
+type TopPageData struct {
+	Users   []*User
+	Title   string
+	Message string
+}
+
+type PageData struct {
+	User    *User
+	Title   string
+	Message string
+}
+
 func TopHandler(w http.ResponseWriter, r *http.Request) {
 	log.Print("TopHandler request.")
 
 	tmpl := template.Must(template.New("top").Parse(topTmpl))
 
-	// TODO: 値を取ってきて一覧表示する
-	dat := struct {
-		Title   string
-		Message string
-	}{
-		Title:   "Test",
-		Message: "ほげほげほげほげ",
+	ctx := context.Background()
+	client, err := createFirestoreConnection(ctx, FireStoreProjectID)
+	if err != nil {
+		log.Printf("Firestore error : %v", err)
 	}
-	if err := tmpl.ExecuteTemplate(w, "top", dat); err != nil {
+	defer client.Close()
+
+	iter := client.Collection("userRoutines").Documents(ctx)
+	var users []*User
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			log.Printf("GetALL error : %v", err)
+			return
+		}
+		res := doc.Data()
+		users = append(users, &User{
+			ID: doc.Ref.ID,
+			Routine: &UserRoutine{
+				Title:         res["title"].(string),
+				FirstRoutine:  res["first_routine"].(string),
+				SecondRoutine: res["second_routine"].(string),
+				ThirdRoutine:  res["third_routine"].(string),
+				Message:       res["message"].(string),
+			},
+		})
+	}
+
+	data := TopPageData{
+		Users:   users,
+		Title:   "Share My Routine",
+		Message: "ほげほげ",
+	}
+
+	if err := tmpl.ExecuteTemplate(w, "top", data); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -130,19 +199,37 @@ func PageHandler(w http.ResponseWriter, r *http.Request) {
 
 	tmpl := template.Must(template.New("page").Parse(pageTmpl))
 	vars := mux.Vars(r)
+	idStr := vars["id"]
 
-	// TODO: 値をとってきてテンプレートに入れる
-
-	dat := struct {
-		Title   string
-		Message string
-		ID      string
-	}{
-		Title:   "Test",
-		Message: "ほげほげほげほげ",
-		ID:      vars["id"],
+	ctx := context.Background()
+	client, err := createFirestoreConnection(ctx, FireStoreProjectID)
+	if err != nil {
+		log.Printf("Firestore error : %v", err)
 	}
-	if err := tmpl.ExecuteTemplate(w, "page", dat); err != nil {
+	defer client.Close()
+
+	doc, err := client.Collection(CollectionName).Doc(idStr).Get(ctx)
+	if err != nil {
+		log.Printf("Get by id error : %v", err)
+	}
+	res := doc.Data()
+
+	data := PageData{
+		User: &User{
+			ID: idStr,
+			Routine: &UserRoutine{
+				Title:         res["title"].(string),
+				FirstRoutine:  res["first_routine"].(string),
+				SecondRoutine: res["second_routine"].(string),
+				ThirdRoutine:  res["third_routine"].(string),
+				Message:       res["message"].(string),
+			},
+		},
+		Title:   res["title"].(string),
+		Message: "ふがふが",
+	}
+
+	if err := tmpl.ExecuteTemplate(w, "page", data); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -164,22 +251,15 @@ func CreateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println(routine)
 
-	// 登録する
-	projectID := "share-my-routine"
+	// 登録するFireStoreProjectID
 	ctx := context.Background()
-	conf := &firebase.Config{ProjectID: projectID}
-	app, err := firebase.NewApp(ctx, conf)
-	if err != nil {
-		log.Printf("firebase.NewApp error : %v", err)
-	}
-
-	client, err := app.Firestore(ctx)
+	client, err := createFirestoreConnection(ctx, FireStoreProjectID)
 	if err != nil {
 		log.Printf("Firestore error : %v", err)
 	}
 	defer client.Close()
 
-	_, _, err = client.Collection("userRoutines").Add(ctx, routine)
+	_, _, err = client.Collection(CollectionName).Add(ctx, routine)
 	if err != nil {
 		log.Printf("Add collection error : %v", err)
 		return
@@ -192,8 +272,18 @@ func CreateHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusMovedPermanently)
 }
 
+func createFirestoreConnection(ctx context.Context, pID string) (*firestore.Client, error) {
+	conf := &firebase.Config{ProjectID: pID}
+	app, err := firebase.NewApp(ctx, conf)
+	if err != nil {
+		log.Printf("firebase.NewApp error : %v", err)
+	}
+	return app.Firestore(ctx)
+}
+
 func main() {
 	log.Print("Hello world sample started.")
+
 	r := mux.NewRouter()
 	// GET
 	r.HandleFunc("/", TopHandler)

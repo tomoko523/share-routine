@@ -1,0 +1,23 @@
+{{define "top"}}
+    <!DOCTYPE html>
+    <html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <title>{{.Title}}</title>
+    </head>
+    <body>
+    {{.Message}}
+    <a href="/new">追加</a>
+    <br>
+    {{range $user := .Users}}
+        <p>{{$user.ID}}</p>
+        <p>{{$user.Routine.Title}}</p>
+        <p>{{$user.Routine.FirstRoutine}}</p>
+        <p>{{$user.Routine.SecondRoutine}}</p>
+        <p>{{$user.Routine.ThirdRoutine}}</p>
+        <p>{{$user.Routine.Message}}</p>
+        <p><a href="/page/{{$user.ID}}">{{$user.Routine.Title}}</a></p>
+    {{end}}
+    </body>
+    </html>
+{{end}}

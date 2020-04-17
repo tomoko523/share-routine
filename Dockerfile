@@ -14,6 +14,9 @@ RUN go mod download
 # Copy local code to the container image.
 COPY . ./
 
+# Check Files
+RUN ls -l
+
 # Build the binary.
 RUN CGO_ENABLED=0 GOOS=linux go build -mod=readonly -v -o server
 
