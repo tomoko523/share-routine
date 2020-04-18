@@ -1,6 +1,7 @@
 # share-routine
 ハッカソン用アプリ
 
+![image](https://user-images.githubusercontent.com/11689944/79634706-33fd9600-81a7-11ea-8eb9-6e5a7390770c.png)
 
 ## 実行
 
