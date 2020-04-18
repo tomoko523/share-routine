@@ -4,33 +4,68 @@
     <head>
         <meta charset="UTF-8">
         <title>{{.Title}}</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+        <link href="https://fonts.googleapis.com/css2?family=Dosis:wght@500&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css?family=Sawarabi+Gothic" rel="stylesheet">
+        <style>
+            body {
+                background-color: #FFFCDC;
+                color: #303030;
+                margin: 0 20px;
+                font-family: 'Dosis', 'Sawarabi Gothic', sans-serif;
+            }
+            h1 {
+                font-size: 24px;
+                text-align: center;
+                margin-top: 50px;
+            }
+            .container {
+                width: 70%;
+                margin-top: 50px;
+            }
+            .form-group {
+                margin-bottom: 2.5rem;
+            }
+            input + input {
+                margin: 12px 0px;
+            }
+            .submit-button {
+                text-align: center;
+            }
+            button {
+                width: 120px;
+            }
+            .back-link {
+                text-align: center;
+                display: block;
+                margin-top: 30px;
+            }
+        </style>
     </head>
     <body>
-    <form action="/create" method="post">
-        <div>
-            <label for="title">名前をつけてください</label>
-            <input type="text" name="title" id="title" placeholder="私のモーニングルーティン" required>
-        </div>
-        <div>
-            <label for="firstRoutine">あなたが起きて最初にすることは?</label>
-            <input type="text" name="firstRoutine" id="firstRoutine" placeholder="大きく背を伸びる" required>
-        </div>
-        <div>
-            <label for="secondRoutine">あなたが起きて２番目にすることは?</label>
-            <input type="text" name="secondRoutine" id="secondRoutine" placeholder="カーテンを開けて日光をあびる">
-        </div>
-        <div>
-            <label for="thirdRoutine">あなたが起きて３番目にすることは?</label>
-            <input type="text" name="thirdRoutine" id="thirdRoutine" placeholder="コーヒーを入れる">
-        </div>
-        <div>
-            <label for="message">みんなにメッセージをどうぞ</label>
-            <input type="text" name="message" id="message" placeholder="気持ちのいい朝を過ごしましょう！！" required>
-        </div>
-        <div>
-            <button>登録する</button>
-        </div>
+    <h1>あなたのMorning Routineを登録してね</h1>
+    <div class="container">
+        <form action="/create" method="post">
+            <div class="form-group">
+                <label for="title">タイトル</label>
+                <input type="text" class="form-control" name="title" id="title" placeholder="tomokoのモーニングルーティン" required>
+            </div>
+            <div class="form-group">
+                <label for="firstRoutine">ルーティーン３つ</label>
+                <input type="text" class="form-control" name="firstRoutine" id="firstRoutine" placeholder="ストレッチ、朝ごはん作り、瞑想 etc" required>
+                <input type="text" class="form-control" name="secondRoutine" id="secondRoutine" required>
+                <input type="text" class="form-control" name="thirdRoutine" id="thirdRoutine" required>
+            </div>
+            <div class="form-group">
+                <label for="message">ひとこと</label>
+                <textarea class="form-control" id="message" name="message" rows="3" placeholder="ルーティーンのコンセプトetc" required></textarea>
+            </div>
+            <div class="submit-button">
+                <button class="btn btn-warning">登録</button>
+            </div>
     </form>
+        <a href="/" class="back-link">Topに戻る</a>
+    </div>
     </body>
     </html>
 {{end}}

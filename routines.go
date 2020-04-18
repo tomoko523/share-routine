@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
+	"net/url"
 
 	"google.golang.org/api/iterator"
 
@@ -28,6 +30,7 @@ var topTmpl = `
     <head>
         <meta charset="UTF-8">
         <title>{{.Title}}</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
         <link href="https://fonts.googleapis.com/css2?family=Dosis:wght@500&display=swap" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css?family=Sawarabi+Gothic" rel="stylesheet">
         <style>
@@ -40,10 +43,11 @@ var topTmpl = `
             h1 {
                 font-size: 36px;
                 text-align: center;
+                margin-top: 50px;
             }
             .container {
                 display: grid;
-                margin: 0 150px;
+                margin: 60px 150px;
                 grid-auto-flow: row;
                 grid-template-columns: repeat(3, 1fr);
                 grid-gap: 20px;
@@ -77,25 +81,13 @@ var topTmpl = `
             }
             #new_button {
                 float: right;
-                display: inline-block;
                 width: 120px;
-                padding: 10px 0;
-                text-align: center;
-                text-decoration: none;
-                font-size: 18px;
-                border-radius: 6px;
-                background-color: #FAD513;
-                color: #303030;
-            }
-            #new_button:hover{
-                opacity:0.7;
             }
         </style>
     </head>
     <body>
     <h1>Share Morning Routine</h1>
-    <a href="/new" id="new_button">追加</a>
-    <br>
+    <a href="/new" id="new_button" class="btn btn-warning">追加</a>
     <div class="container">
     {{range $user := .Users}}
         <div class="card">
@@ -117,61 +109,162 @@ var topTmpl = `
 
 var newPageTmpl = `
 {{define "newpage"}}
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <title>{{.Title}}</title>
-</head>
-<body>
-<form action="/create" method="post">
-    <div>
-        <label for="title">名前をつけてください</label>
-        <input type="text" name="title" id="title" placeholder="私のモーニングルーティン" required>
+    <!DOCTYPE html>
+    <html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <title>{{.Title}}</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+		<link href="https://fonts.googleapis.com/css2?family=Dosis:wght@500&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css?family=Sawarabi+Gothic" rel="stylesheet">
+        <style>
+            body {
+                background-color: #FFFCDC;
+                color: #303030;
+                margin: 0 20px;
+                font-family: 'Dosis', 'Sawarabi Gothic', sans-serif;
+            }
+            h1 {
+                font-size: 24px;
+                text-align: center;
+                margin-top: 50px;
+            }
+            .container {
+                width: 70%;
+                margin-top: 50px;
+            }
+            .form-group {
+                margin-bottom: 2.5rem;
+            }
+            input + input {
+                margin: 12px 0px;
+            }
+            .submit-button {
+                text-align: center;
+            }
+            button {
+                width: 120px;
+            }
+            .back-link {
+                text-align: center;
+                display: block;
+                margin-top: 30px;
+            }
+        </style>
+    </head>
+    <body>
+    <h1>あなたのMorning Routineを登録してね</h1>
+    <div class="container">
+        <form action="/create" method="post">
+            <div class="form-group">
+                <label for="title">タイトル</label>
+                <input type="text" class="form-control" name="title" id="title" placeholder="tomokoのモーニングルーティン" required>
+            </div>
+            <div class="form-group">
+                <label for="firstRoutine">ルーティーン３つ</label>
+                <input type="text" class="form-control" name="firstRoutine" id="firstRoutine" placeholder="ストレッチ、朝ごはん作り、瞑想 etc" required>
+                <input type="text" class="form-control" name="secondRoutine" id="secondRoutine" required>
+                <input type="text" class="form-control" name="thirdRoutine" id="thirdRoutine" required>
+            </div>
+            <div class="form-group">
+                <label for="message">ひとこと</label>
+                <textarea class="form-control" id="message" name="message" rows="3" placeholder="ルーティーンのコンセプトetc" required></textarea>
+            </div>
+            <div class="submit-button">
+                <button class="btn btn-warning">登録</button>
+            </div>
+    </form>
+        <a href="/" class="back-link">Topに戻る</a>
     </div>
-    <div>
-        <label for="firstRoutine">あなたが起きて最初にすることは?</label>
-        <input type="text" name="firstRoutine" id="firstRoutine" placeholder="大きく背を伸びる" required>
-    </div>
-    <div>
-        <label for="secondRoutine">あなたが起きて２番目にすることは?</label>
-        <input type="text" name="secondRoutine" id="secondRoutine" placeholder="カーテンを開けて日光をあびる">
-    </div>
-    <div>
-        <label for="thirdRoutine">あなたが起きて３番目にすることは?</label>
-        <input type="text" name="thirdRoutine" id="thirdRoutine" placeholder="コーヒーを入れる">
-    </div>
-    <div>
-        <label for="message">みんなにメッセージをどうぞ</label>
-        <input type="text" name="message" id="message" placeholder="気持ちのいい朝を過ごしましょう！！" required>
-    </div>
-    <div>
-        <button>登録する</button>
-    </div>
-</form>
-</body>
-</html>
+    </body>
+    </html>
 {{end}}
 `
 
 var pageTmpl = `
 {{define "page"}}
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <title>{{.Title}}</title>
-</head>
-<body>
-{{.Message}}
-<p>{{.User.ID}}</p>
-<p>{{.User.Routine.Title}}</p>
-<p>{{.User.Routine.FirstRoutine}}</p>
-<p>{{.User.Routine.SecondRoutine}}</p>
-<p>{{.User.Routine.ThirdRoutine}}</p>
-<p>{{.User.Routine.Message}}</p>
-</body>
-</html>
+    <!DOCTYPE html>
+    <html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <title>{{.User.Routine.Title}}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Dosis:wght@500&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css?family=Sawarabi+Gothic" rel="stylesheet">
+        <style>
+            body {
+                background-image: url(https://storage.googleapis.com/share_routine_cards/mizutama_1000.jpg);
+                background-repeat: repeat;
+                color: #303030;
+                margin: 0 20px;
+                font-family: 'Dosis', 'Sawarabi Gothic', sans-serif;
+            }
+            .container {
+                margin: 60px 150px;
+            }
+            .container .card {
+               margin: 0 10%;
+            }
+            .title {
+                font-size: 38px;
+            }
+            .routines {
+
+            }
+            .routines .routine {
+                font-size: 36px;
+                margin: 3rem 0;
+                padding: 16px 10px;
+                background-color: #FFF8A3;
+                border-radius: 6px;
+            }
+            .message {
+                border: #FFF9B1 solid 1px;
+                background-color: #FFFFFF;
+            }
+            .message .title {
+                text-align: center;
+                font-size: 30px;
+                color:#FAD513;
+                margin-top:2rem;
+            }
+            .message .main {
+                font-size: 28px;
+                color: gray;
+                margin: 2rem 2.5rem;
+            }
+            .back-link {
+                text-align: center;
+                display: block;
+                margin-top: 30px;
+            }
+            .share-link {
+                text-align: center;
+                display: block;
+                margin-top: 30px;
+            }
+        </style>
+    </head>
+    <body>
+    <div class="container">
+        <div class="card">
+            <p class="title">{{.User.Routine.Title}}</p>
+            <div class="routines">
+                <div class="routine">{{.User.Routine.FirstRoutine}}</div>
+                <div class="routine">{{.User.Routine.SecondRoutine}}</div>
+                <div class="routine">{{.User.Routine.ThirdRoutine}}</div>
+            </div>
+            <div class="message">
+                <div class="title">ひとこと</div>
+                <div class="main">{{.User.Routine.Message}}</div>
+            </div>
+            <a href="{{.User.ShareURL}}" class="share-link">
+                <img src="https://storage.googleapis.com/share_routine_cards/twitter_share_button.png">
+            </a>
+            <a href="/" class="back-link">Topに戻る</a>
+        </div>
+    </div>
+    </body>
+    </html>
 {{end}}
 `
 
@@ -186,8 +279,9 @@ type UserRoutine struct {
 }
 
 type User struct {
-	ID      string       `json:"id"`
-	Routine *UserRoutine `json:"routine"`
+	ID       string       `json:"id"`
+	Routine  *UserRoutine `json:"routine"`
+	ShareURL string       `json:"share_url"`
 }
 
 type TopPageData struct {
@@ -326,7 +420,9 @@ func PageHandler(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.New("page").Parse(pageTmpl))
 
 	if Environment == "local" {
-		//tmpl := template.Must(template.ParseFiles("templates/page.html"))
+		tmpl := template.Must(template.ParseFiles("templates/page.html"))
+		// URLを設定
+		dummyPageData.setShareURL(r.Host)
 		if err := tmpl.ExecuteTemplate(w, "page", dummyPageData); err != nil {
 			log.Fatal(err)
 		}
@@ -360,10 +456,10 @@ func PageHandler(w http.ResponseWriter, r *http.Request) {
 				Message:       res["message"].(string),
 			},
 		},
-		Title:   res["title"].(string),
-		Message: "ふがふが",
+		Title: res["title"].(string),
 	}
-
+	// URLを設定
+	data.setShareURL(r.Host)
 	if err := tmpl.ExecuteTemplate(w, "page", data); err != nil {
 		log.Fatal(err)
 	}
@@ -416,8 +512,22 @@ func createFirestoreConnection(ctx context.Context, pID string) (*firestore.Clie
 	return app.Firestore(ctx)
 }
 
+func (data PageData) setShareURL(host string) {
+	// シェア用のURLを生成
+	v := url.Values{}
+	v.Set("text", "私のMorningRoutineは...")
+	v.Add("url", fmt.Sprintf("https://%v/page/%v", host, data.User.ID))
+	v.Add("hashtags",
+		fmt.Sprintf("%v,%v,%v",
+			data.User.Routine.FirstRoutine,
+			data.User.Routine.SecondRoutine,
+			data.User.Routine.ThirdRoutine,
+		))
+	data.User.ShareURL = fmt.Sprintf("%v%v", "https://twitter.com/intent/tweet?", v.Encode())
+}
+
 func main() {
-	log.Print("Hello world sample started.")
+	log.Print("Share MorningRoutine started.")
 
 	r := mux.NewRouter()
 	// GET

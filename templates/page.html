@@ -1,0 +1,84 @@
+{{define "page"}}
+    <!DOCTYPE html>
+    <html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <title>{{.User.Routine.Title}}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Dosis:wght@500&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css?family=Sawarabi+Gothic" rel="stylesheet">
+        <style>
+            body {
+                background-image: url(https://storage.googleapis.com/share_routine_cards/mizutama_1000.jpg);
+                background-repeat: repeat;
+                color: #303030;
+                margin: 0 20px;
+                font-family: 'Dosis', 'Sawarabi Gothic', sans-serif;
+            }
+            .container {
+                margin: 60px 150px;
+            }
+            .container .card {
+               margin: 0 10%;
+            }
+            .title {
+                font-size: 38px;
+            }
+            .routines {
+
+            }
+            .routines .routine {
+                font-size: 36px;
+                margin: 3rem 0;
+                padding: 16px 10px;
+                background-color: #FFF8A3;
+                border-radius: 6px;
+            }
+            .message {
+                border: #FFF9B1 solid 1px;
+                background-color: #FFFFFF;
+            }
+            .message .title {
+                text-align: center;
+                font-size: 30px;
+                color:#FAD513;
+                margin-top:2rem;
+            }
+            .message .main {
+                font-size: 28px;
+                color: gray;
+                margin: 2rem 2.5rem;
+            }
+            .back-link {
+                text-align: center;
+                display: block;
+                margin-top: 30px;
+            }
+            .share-link {
+                text-align: center;
+                display: block;
+                margin-top: 30px;
+            }
+        </style>
+    </head>
+    <body>
+    <div class="container">
+        <div class="card">
+            <p class="title">{{.User.Routine.Title}}</p>
+            <div class="routines">
+                <div class="routine">{{.User.Routine.FirstRoutine}}</div>
+                <div class="routine">{{.User.Routine.SecondRoutine}}</div>
+                <div class="routine">{{.User.Routine.ThirdRoutine}}</div>
+            </div>
+            <div class="message">
+                <div class="title">ひとこと</div>
+                <div class="main">{{.User.Routine.Message}}</div>
+            </div>
+            <a href="{{.User.ShareURL}}" class="share-link">
+                <img src="https://storage.googleapis.com/share_routine_cards/twitter_share_button.png">
+            </a>
+            <a href="/" class="back-link">Topに戻る</a>
+        </div>
+    </div>
+    </body>
+    </html>
+{{end}}
