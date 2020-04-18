@@ -15,33 +15,103 @@ import (
 	"github.com/gorilla/schema"
 )
 
+const Environment = "prd"
+
 const FireStoreProjectID = "share-my-routine"
 const CollectionName = "userRoutines"
 
 // HTML
 var topTmpl = `
 {{define "top"}}
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <title>{{.Title}}</title>
-</head>
-<body>
-{{.Message}}
-<a href="/new">追加</a>
-<br>
-{{range $user := .Users}}
-  <p>{{$user.ID}}</p>
-  <p>{{$user.Routine.Title}}</p>
-  <p>{{$user.Routine.FirstRoutine}}</p>
-  <p>{{$user.Routine.SecondRoutine}}</p>
-  <p>{{$user.Routine.ThirdRoutine}}</p>
-  <p>{{$user.Routine.Message}}</p>
-  <p><a href="/page/{{$user.ID}}">{{$user.Routine.Title}}</a></p>
-{{end}}
-</body>
-</html>
+    <!DOCTYPE html>
+    <html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <title>{{.Title}}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Dosis:wght@500&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css?family=Sawarabi+Gothic" rel="stylesheet">
+        <style>
+            body {
+                background-color: #FFFCDC;
+                color: #303030;
+                margin: 0 20px;
+                font-family: 'Dosis', 'Sawarabi Gothic', sans-serif;
+            }
+            h1 {
+                font-size: 36px;
+                text-align: center;
+            }
+            .container {
+                display: grid;
+                margin: 0 150px;
+                grid-auto-flow: row;
+                grid-template-columns: repeat(3, 1fr);
+                grid-gap: 20px;
+            }
+            .card {
+                background-image: url(https://storage.googleapis.com/share_routine_cards/mizutama_card.jpg);
+                background-size: cover;
+                box-shadow: 0 2px 4px rgba(3,3,3,.09);
+                border-radius: 3px;
+            }
+            .card:hover{
+                box-shadow: 0 4px 8px rgba(0,0,0,.12);
+                border-radius: 3px;
+                margin-top:-3px;
+            }
+            .card a {
+                text-decoration: none;
+                color: #303030;
+            }
+            .card a .routines {
+                padding-bottom: 40px;
+            }
+            .user {
+                margin: 25px 28px
+            }
+            .card a .routines .routine {
+                margin: 10px 25px;
+                padding: 8px 10px;
+                background-color: #FFF8A3;
+                border-radius: 6px;
+            }
+            #new_button {
+                float: right;
+                display: inline-block;
+                width: 120px;
+                padding: 10px 0;
+                text-align: center;
+                text-decoration: none;
+                font-size: 18px;
+                border-radius: 6px;
+                background-color: #FAD513;
+                color: #303030;
+            }
+            #new_button:hover{
+                opacity:0.7;
+            }
+        </style>
+    </head>
+    <body>
+    <h1>Share Morning Routine</h1>
+    <a href="/new" id="new_button">追加</a>
+    <br>
+    <div class="container">
+    {{range $user := .Users}}
+        <div class="card">
+        <a href="/page/{{$user.ID}}">
+            <p class="user">{{$user.Routine.Title}}</p>
+            <div class="routines">
+                <div class="routine">{{$user.Routine.FirstRoutine}}</div>
+                <div class="routine">{{$user.Routine.SecondRoutine}}</div>
+                <div class="routine">{{$user.Routine.ThirdRoutine}}</div>
+            </div>
+        </a>
+        </div>
+    {{end}}
+    </div>
+    </body>
+    </html>
 {{end}}
 `
 
@@ -132,10 +202,62 @@ type PageData struct {
 	Message string
 }
 
+var dummyUserRoutine = UserRoutine{
+	Title:         "tomoko",
+	FirstRoutine:  "ストレッチ",
+	SecondRoutine: "朝ごはん作り",
+	ThirdRoutine:  "yoga",
+	Message:       "今日はいつもより早起きしてコーヒー淹れたり朝ごはんを丁寧に作ってみました！\nお洋服は新しく買った洋服着てお家勤務もテンション上げて頑張ります〜",
+}
+
+var dummyTopPageData = TopPageData{
+	Title:   "Share My Routine",
+	Message: "ほげほげ",
+}
+
+var dummyPageData = PageData{
+	User: &User{
+		ID:      "5CB42r6DJ0FiD0aGxn3V",
+		Routine: &dummyUserRoutine,
+	},
+	Title:   "Share My Routine",
+	Message: "ほげほげ",
+}
+
 func TopHandler(w http.ResponseWriter, r *http.Request) {
 	log.Print("TopHandler request.")
 
 	tmpl := template.Must(template.New("top").Parse(topTmpl))
+
+	if Environment == "local" {
+		tmpl := template.Must(template.ParseFiles("templates/top.html"))
+		var dummyUsers []*User
+		dummyUsers = append(dummyUsers, &User{
+			ID:      "5CB42r6DJ0FiD0aGxn3V",
+			Routine: &dummyUserRoutine,
+		})
+		dummyUsers = append(dummyUsers, &User{
+			ID:      "SvRJL7uz13MEwwLvLRql",
+			Routine: &dummyUserRoutine,
+		})
+		dummyUsers = append(dummyUsers, &User{
+			ID:      "UAlH3pumAxGChuOuE7Ag",
+			Routine: &dummyUserRoutine,
+		})
+		dummyUsers = append(dummyUsers, &User{
+			ID:      "fugagfuga",
+			Routine: &dummyUserRoutine,
+		})
+		dummyUsers = append(dummyUsers, &User{
+			ID:      "hogehoge",
+			Routine: &dummyUserRoutine,
+		})
+		dummyTopPageData.Users = dummyUsers
+		if err := tmpl.ExecuteTemplate(w, "top", dummyTopPageData); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
 
 	ctx := context.Background()
 	client, err := createFirestoreConnection(ctx, FireStoreProjectID)
@@ -183,6 +305,10 @@ func NewPageHandler(w http.ResponseWriter, r *http.Request) {
 	log.Print("NewPageHandler request.")
 
 	tmpl := template.Must(template.New("newpage").Parse(newPageTmpl))
+
+	if Environment == "local" {
+		tmpl = template.Must(template.ParseFiles("templates/newpage.html"))
+	}
 	dat := struct {
 		Title string
 	}{
@@ -198,6 +324,15 @@ func PageHandler(w http.ResponseWriter, r *http.Request) {
 	log.Print("PageHandler request.")
 
 	tmpl := template.Must(template.New("page").Parse(pageTmpl))
+
+	if Environment == "local" {
+		//tmpl := template.Must(template.ParseFiles("templates/page.html"))
+		if err := tmpl.ExecuteTemplate(w, "page", dummyPageData); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
+
 	vars := mux.Vars(r)
 	idStr := vars["id"]
 
