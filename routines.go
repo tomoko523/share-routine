@@ -482,7 +482,6 @@ func CreateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println(routine)
 
-	// 登録するFireStoreProjectID
 	ctx := context.Background()
 	client, err := createFirestoreConnection(ctx, FireStoreProjectID)
 	if err != nil {
